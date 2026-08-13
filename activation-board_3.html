@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Activation Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0D13; --bg-grid:rgba(255,255,255,0.025);
+    --surface:#12161F; --surface-2:#171C27; --surface-hover:#1A2029;
+    --line:#232A38; --line-soft:#1B212C;
+    --ink:#E8EAF0; --ink-soft:#8D96AC; --ink-faint:#5B6478;
+    --blue:#4FA8FF; --blue-bg:rgba(79,168,255,0.14);
+    --cyan:#35D6C4; --cyan-bg:rgba(53,214,196,0.14);
+    --amber:#FFB454; --amber-bg:rgba(255,180,84,0.16);
+    --green:#3DDC84; --green-bg:rgba(61,220,132,0.15);
+    --red:#FF5C6C; --red-bg:rgba(255,92,108,0.15);
+    --purple:#A78BFA;
+    --grey:#7C859B; --grey-bg:rgba(124,133,155,0.16);
+    --radius:10px;
+    --shadow:0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      linear-gradient(var(--bg-grid) 1px, transparent 1px) 0 0/100% 32px,
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px) 0 0/32px 100%,
+      var(--bg);
+    color:var(--ink);font-family:'IBM Plex Sans',sans-serif;font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;
+  }
+  #app{max-width:1560px;margin:0 auto;padding:26px 26px 80px;}
+  button{font-family:inherit;cursor:pointer;}
+  input,select{font-family:inherit;font-size:13px;color:var(--ink);}
+  :focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
+  @media (prefers-reduced-motion:reduce){*{transition:none !important;}}
+
+  .topbar{height:3px;background:linear-gradient(90deg,var(--blue),var(--cyan),var(--green),var(--amber));margin:-26px -26px 24px;}
+  .header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;margin-bottom:22px;}
+  .wordmark{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:26px;letter-spacing:-0.01em;margin:0;display:flex;align-items:center;gap:9px;}
+  .wordmark .dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);}
+  .tagline{color:var(--ink-soft);font-size:12.5px;margin-top:4px;}
+  .sync-note{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:var(--ink-soft);background:var(--surface);border:1px solid var(--line);padding:7px 13px;border-radius:20px;font-family:'JetBrains Mono',monospace;}
+  .sync-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex:none;box-shadow:0 0 6px var(--green);}
+  .sync-dot.warn{background:var(--red);box-shadow:0 0 6px var(--red);}
+  .storage-warning{background:var(--red-bg);color:var(--red);border:1px solid var(--red);border-radius:var(--radius);padding:10px 16px;font-size:12.5px;margin-bottom:18px;}
+
+  .tabs{display:flex;gap:20px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin-bottom:24px;}
+  .tab{position:relative;display:flex;align-items:center;gap:6px;padding:0 0 12px;background:none;border:none;font-size:11.5px;letter-spacing:0.05em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;white-space:nowrap;font-family:'IBM Plex Sans';}
+  .tab.active{color:var(--ink);}
+  .tab.active::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--blue);box-shadow:0 0 8px var(--blue);}
+  .tab-rename-btn{opacity:0;border:none;background:none;color:var(--ink-faint);font-size:11px;padding:2px;line-height:1;}
+  .tab:hover .tab-rename-btn,.tab:focus-within .tab-rename-btn{opacity:1;}
+  .tab-rename-input{font:600 12px 'IBM Plex Sans';border:none;border-bottom:1px solid var(--blue);background:transparent;width:140px;padding:0 0 12px;color:var(--ink);}
+
+  .stat-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:14px;}
+  .stat-card{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--grey);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow);}
+  .stat-num{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;}
+  .stat-label{font-size:10px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .stat-card.c-grey{border-left-color:var(--grey);} .stat-card.c-amber{border-left-color:var(--amber);}
+  .stat-card.c-blue{border-left-color:var(--blue);} .stat-card.c-green{border-left-color:var(--green);}
+
+  .section-row{display:flex;justify-content:space-between;align-items:center;margin:24px 0 12px;}
+  .section-title{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;margin:0;letter-spacing:-0.01em;}
+  .btn{display:inline-flex;align-items:center;gap:6px;background:var(--blue);color:#06101C;border:none;border-radius:8px;padding:8px 15px;font-size:12.5px;font-weight:600;letter-spacing:0.01em;}
+  .btn.secondary{background:var(--surface);color:var(--ink);border:1px solid var(--line);}
+  .btn:hover{filter:brightness(1.1);}
+
+  .upcoming-list{display:flex;flex-direction:column;gap:7px;}
+  .upcoming-row{display:grid;grid-template-columns:130px 1.8fr 100px 130px 130px 100px;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:11px 15px;box-shadow:var(--shadow);cursor:pointer;}
+  .upcoming-row:hover{border-color:var(--blue);}
+  .upcoming-row.overdue{border-left:3px solid var(--red);}
+  .group-pill{font-size:9.5px;font-weight:700;letter-spacing:0.03em;text-transform:uppercase;padding:3px 8px;border-radius:6px;color:#06101C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .row-main .brand{font-weight:600;font-size:13.5px;}
+  .row-main .name{color:var(--ink-soft);font-size:12px;}
+  .row-month{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink-soft);}
+  .badge{display:inline-block;font-size:10.5px;font-weight:600;padding:4px 9px;border-radius:6px;white-space:nowrap;}
+  .countdown{font-size:11px;font-weight:600;text-align:right;font-family:'JetBrains Mono',monospace;}
+  .countdown.overdue{color:var(--red);}
+  .countdown.now{color:var(--green);}
+  .countdown.soon{color:var(--amber);}
+  .bd-flag{font-size:9px;color:var(--amber);border:1px solid var(--amber);border-radius:4px;padding:1px 4px;margin-left:4px;}
+  .empty-note{color:var(--ink-soft);font-size:13px;padding:18px;background:var(--surface);border:1px dashed var(--line);border-radius:var(--radius);}
+
+  .as-blank,.es-blank{background:var(--grey-bg);color:var(--grey);}
+  .as-to-be-sent{background:var(--amber-bg);color:var(--amber);}
+  .as-feedback-received{background:var(--blue-bg);color:var(--blue);}
+  .as-approved{background:var(--cyan-bg);color:var(--cyan);}
+  .as-done{background:var(--green-bg);color:var(--green);font-weight:700;}
+  .es-to-be-executed{background:var(--amber-bg);color:var(--amber);}
+  .es-done{background:var(--green-bg);color:var(--green);font-weight:700;}
+
+  .group-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
+  .group-title-row{display:flex;align-items:center;gap:8px;}
+  .group-title{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;margin:0;letter-spacing:-0.01em;}
+  .group-count{color:var(--ink-soft);font-size:12px;font-family:'JetBrains Mono',monospace;}
+  .group-count .warn{color:var(--red);}
+  .icon-btn{border:none;background:none;color:var(--ink-faint);font-size:13px;padding:4px;}
+  .icon-btn:hover{color:var(--ink);}
+
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+  .toolbar input[type="text"]{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 12px;color:var(--ink);min-width:220px;}
+  .toolbar select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--ink);}
+  .toolbar label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-soft);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 12px;}
+  .toolbar .reset-link{font-size:12px;color:var(--blue);background:none;border:none;text-decoration:underline;}
+  .result-count{font-size:11.5px;color:var(--ink-faint);font-family:'JetBrains Mono',monospace;margin-left:2px;}
+
+  .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);}
+  table{border-collapse:collapse;width:100%;min-width:1750px;}
+  thead th{position:sticky;top:0;background:var(--surface-2);text-align:left;font-size:9.5px;text-transform:uppercase;letter-spacing:0.04em;color:var(--ink-soft);font-weight:600;padding:11px 8px;border-bottom:1px solid var(--line);white-space:nowrap;z-index:3;}
+  tbody td{padding:5px 7px;border-bottom:1px solid var(--line-soft);vertical-align:middle;}
+  tbody tr.main-row:hover{background:var(--surface-hover);}
+  tbody tr.row-overdue{background:rgba(255,92,108,0.05);}
+  td input[type="text"],td input[type="number"]{width:100%;min-width:80px;border:1px solid transparent;background:transparent;border-radius:6px;padding:6px 6px;color:var(--ink);}
+  td input:hover{border-color:var(--line);}
+  td input:focus{border-color:var(--blue);background:var(--surface-2);}
+  td select{background:transparent;border:1px solid transparent;border-radius:6px;padding:6px 6px;color:var(--ink);}
+  td select:hover{border-color:var(--line);}
+  td select.status-select{appearance:none;border:1px solid transparent;border-radius:6px;padding:6px 9px;font-weight:600;font-size:11px;min-width:118px;}
+  td select.status-select:hover{border-color:var(--line);}
+  .col-brand{position:sticky;left:0;background:var(--surface);z-index:2;box-shadow:2px 0 6px rgba(0,0,0,0.35);}
+  tbody tr.main-row:hover .col-brand{background:var(--surface-hover);}
+  tbody tr.row-overdue .col-brand{background:#171319;}
+  .col-brand input{font-weight:600;min-width:120px;}
+  .overdue-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--red);box-shadow:0 0 5px var(--red);margin-right:5px;}
+  .col-product input{min-width:150px;}
+  .del-btn{border:none;background:none;color:var(--ink-faint);font-size:16px;line-height:1;padding:4px 6px;border-radius:6px;}
+  .del-btn:hover{color:var(--red);background:var(--red-bg);}
+  .bd-toggle{border:1px solid var(--line);background:transparent;border-radius:20px;padding:5px 10px;font-size:11px;color:var(--ink-soft);white-space:nowrap;font-family:'JetBrains Mono',monospace;}
+  .bd-toggle:hover{border-color:var(--amber);color:var(--ink);}
+  .bd-toggle.has-bd{background:var(--amber-bg);color:var(--amber);border-color:transparent;font-weight:600;}
+  .bd-detail-row td{background:var(--surface-2);padding:12px 16px;}
+  .bd-detail-table{width:100%;border-collapse:collapse;}
+  .bd-detail-table th{text-align:left;font-size:9px;text-transform:uppercase;color:var(--ink-soft);padding:5px 6px;}
+  .bd-detail-table td{padding:3px 6px;border-bottom:1px solid var(--line-soft);}
+  .bd-detail-table input{width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:5px;padding:4px 6px;font-size:12px;}
+  .bd-add-row{margin-top:6px;}
+  .bd-empty{color:var(--ink-soft);font-size:12px;padding:4px 0;}
+
+  .full-table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);}
+  .full-table{width:100%;border-collapse:collapse;min-width:1000px;}
+  .full-table th{text-align:left;font-size:9.5px;text-transform:uppercase;letter-spacing:0.03em;color:var(--ink-soft);padding:10px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface-2);}
+  .full-table td{padding:9px 10px;border-bottom:1px solid var(--line-soft);font-size:12.5px;}
+  .full-table tr:last-child td{border-bottom:none;}
+  .full-table tr{cursor:pointer;}
+  .full-table tr:hover{background:var(--surface-hover);}
+  .full-table tr.overdue td:first-child{box-shadow:inset 3px 0 0 var(--red);}
+
+  @media (max-width:900px){
+    .stat-strip{grid-template-columns:repeat(2,1fr);}
+    .upcoming-row{grid-template-columns:90px 1fr 70px;}
+    .upcoming-row .row-month,.upcoming-row .badge:nth-of-type(2){display:none;}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const SEED_DATA = {"groups": [{"id": "g1", "name": "COTY"}, {"id": "g2", "name": "EUROITIALIA"}, {"id": "g3", "name": "PUIG"}, {"id": "g4", "name": "SHISEIDO"}, {"id": "g5", "name": "MONTALE & MANCERA"}, {"id": "g6", "name": "GOLDFIELD & BANKS"}, {"id": "g7", "name": "ORMONDE JAYNE"}, {"id": "g8", "name": "ROJA"}], "activations": [{"id": "x1", "month": "2026-08-01", "brand": "Boss", "product": "Boss Bottled Beyond - Repush", "digital": "Yes", "magazine": "", "outpost": 1, "window": 1, "kol": "", "event": "", "deck": "Approved", "tmDeck": "Approved", "approvalStatus": "Approved", "executionStatus": "Done", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x2", "month": "2026-08-01", "brand": "Chloe", "product": "CHLOE LE PARFUM - Repush", "digital": "", "magazine": "", "outpost": 1, "window": "", "kol": 8, "event": "", "deck": "Pending Approval", "tmDeck": "Apprv", "approvalStatus": "Approved", "executionStatus": "To be Executed", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x3", "month": "2026-09-01", "brand": "Marc_Jacobs", "product": "MJ Perfect Absolute - Repush", "digital": "", "magazine": "", "outpost": "", "window": "", "kol": 1, "event": "", "deck": "WIP", "tmDeck": "WIP", "approvalStatus": "To be Sent", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x4", "month": "2026-10-01", "brand": "Burberry", "product": "BBY Goddess Vanilla EDPI", "digital": "", "magazine": "1 Page Print", "outpost": 2, "window": 3, "kol": 3, "event": "", "deck": "WIP", "tmDeck": "WIP", "approvalStatus": "To be Sent", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x5", "month": "2026-12-01", "brand": "Boss", "product": "BBB FOR HER/BBB EDTI", "digital": "", "magazine": "", "outpost": 1, "window": 1, "kol": "2Paid (15 Event KOL)", "event": "In-Store Event", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x6", "month": "2026-12-01", "brand": "Marc_Jacobs", "product": "MJ Daisy Murakami - Repush", "digital": "", "magazine": "", "outpost": 1, "window": "", "kol": 1, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x7", "month": "2027-01-01", "brand": "Chloe", "product": "CHLOE LE NECTAR ", "digital": "", "magazine": "1 Page Print", "outpost": 1, "window": 1, "kol": "2 Paid (10 Event KOL)", "event": "Restaurant/Café Event", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x8", "month": "2027-01-01", "brand": "MHA", "product": "(BBY - BOSS - CHLOE)", "digital": "", "magazine": "Advetorial 1/2 Page", "outpost": "", "window": "", "kol": "", "event": "MHA", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x9", "month": "2027-01-01", "brand": "Marc_Jacobs", "product": "MJ - Perfect Ext", "digital": "", "magazine": "", "outpost": 1, "window": "", "kol": 2, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x10", "month": "2027-01-01", "brand": "Calvin_Klein", "product": "CK - Eternity", "digital": "", "magazine": "", "outpost": 1, "window": "", "kol": 1, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x11", "month": "2027-02-01", "brand": "Chloe", "product": "Chloe Nomade Egypt", "digital": "", "magazine": "", "outpost": 1, "window": "", "kol": 1, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x12", "month": "2027-03-01", "brand": "Burberry", "product": "BBY HER EDP WISTERIA BERRIES", "digital": "", "magazine": "", "outpost": 1, "window": 1, "kol": 2, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x13", "month": "2027-03-01", "brand": "Marc_Jacobs", "product": "MJ Wild ESE - Repush", "digital": "", "magazine": "", "outpost": 1, "window": 1, "kol": 1, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x14", "month": "2027-03-01", "brand": "Boss", "product": "Boss The Scent Ext", "digital": "", "magazine": "", "outpost": 1, "window": "", "kol": 1, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x15", "month": "2027-04-01", "brand": "Burberry", "product": "BBY GODDESS LTD ED", "digital": "", "magazine": "", "outpost": 1, "window": 1, "kol": 2, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x16", "month": "2027-04-01", "brand": "Burberry", "product": "BBY HERO CEZDAN", "digital": "", "magazine": "", "outpost": 1, "window": 1, "kol": 2, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x17", "month": "2027-04-01", "brand": "Chloe", "product": "CHLOE LE NECTAR - Repush", "digital": "", "magazine": "", "outpost": 1, "window": 1, "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x18", "month": "2027-04-01", "brand": "Marc_Jacobs", "product": "MJ - Daisy Spring Le", "digital": "", "magazine": "", "outpost": 1, "window": "", "kol": 1, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x19", "month": "2027-04-01", "brand": "Calvin_Klein", "product": "CK - Euphoria Elixir Novelty - Repush", "digital": "", "magazine": "", "outpost": 1, "window": "", "kol": 1, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x20", "month": "2027-05-01", "brand": "Calvin_Klein", "product": "CK - Euphoria Elixir Novelty", "digital": "", "magazine": "", "outpost": 1, "window": 1, "kol": 2, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x21", "month": "2027-05-01", "brand": "Boss", "product": "BBB FOR HER/BBB EDTI - Repush", "digital": "", "magazine": "", "outpost": 1, "window": 1, "kol": 1, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x22", "month": "2027-06-01", "brand": "MHA", "product": "(BBY - BOSS - CHLOE)", "digital": "", "magazine": "Advetorial 1/2 Page", "outpost": "", "window": "", "kol": "", "event": "MHA", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x23", "month": "2027-06-01", "brand": "Marc_Jacobs", "product": "MJ Super Daisy Novelty", "digital": "", "magazine": "", "outpost": 1, "window": "", "kol": 5, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x24", "month": "2027-06-01", "brand": "Boss", "product": "BOSS Bottled Limited Edt", "digital": "", "magazine": "", "outpost": 1, "window": "", "kol": 1, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g1"}, {"id": "x25", "month": "2026-07-01", "brand": "Versace", "product": "Eros Energy & Najim", "digital": "Yes", "magazine": "2 Pag  1 Page Advetorial", "outpost": 1, "window": "", "kol": 10, "event": "1 Mega Podium", "deck": "Done", "tmDeck": "", "approvalStatus": "Done", "executionStatus": "To be executed", "bdSkus": [{"subtype": "Fragrances", "sku": 740008, "ean": 8011003809202, "productName": "VERSACE EROS POUR HOMME EDT 50ML", "value": 36, "id": "s1"}, {"subtype": "Product", "sku": 740010, "ean": 8011003809219, "productName": "VERSACE EROS EDT 100ML", "value": 240, "id": "s2"}, {"subtype": "Tester", "sku": 740060, "ean": 8011003809257, "productName": "VERSACE EROS POUR HOMME EDT 100ML TESTER", "value": 28, "id": "s3"}, {"subtype": "Vials", "sku": 740064, "ean": 8011003809356, "productName": "VERSACE EROS POUR HOMME EDT 1ML VIALS", "value": 50, "id": "s4"}, {"subtype": "Fragrances", "sku": 740108, "ean": 8011003861903, "productName": "VERSACE EROS POUR HOMME 50ML", "value": 36, "id": "s5"}, {"subtype": "Fragrances", "sku": 740110, "ean": 8011003861224, "productName": "VERSACE EROS POUR HOMME EDP 100ML", "value": 72, "id": "s6"}, {"subtype": "Tester", "sku": 740160, "ean": 8011003861408, "productName": "VERSACE EROS POUR HOMME EDP 100ML TESTER", "value": 10, "id": "s7"}, {"subtype": "Fragrances", "sku": 740210, "ean": 8011003872077, "productName": "VERSACE EROS POUR HOMME PARFUM EDP 100ML", "value": 36, "id": "s8"}, {"subtype": "Tester", "sku": 740260, "ean": 8011003872084, "productName": "VERSACE EROS POUR HOMME PARFUM EDP 100ML TESTER", "value": 10, "id": "s9"}, {"subtype": "Vials", "sku": 740264, "ean": 8011003872091, "productName": "VERSACE EROS PARFUM EDP 1ML VIALS", "value": 50, "id": "s10"}, {"subtype": "Fragrances", "sku": 740310, "ean": 8011003895755, "productName": "VERSACE EROS NAJIM POUR HOMME PARFUM EDP 100ML", "value": 72, "id": "s11"}, {"subtype": "Fragrances", "sku": 740311, "ean": 8011003895762, "productName": "VERSACE EROS NAJIM POUR HOMME PARFUM EDP 200ML", "value": 24, "id": "s12"}, {"subtype": "Tester", "sku": 740360, "ean": 8011003898336, "productName": "VERSACE EROS NAJIM POUR HOMME PARFUM 100ML TESTER", "value": 10, "id": "s13"}, {"subtype": "Vials", "sku": 740364, "ean": 8011003895779, "productName": "VERSACE EROS NAJIM POUR HOMME PARFUM EDP 1ML VIALS", "value": 50, "id": "s14"}, {"subtype": "Fragrances", "sku": 741010, "ean": 8011003845354, "productName": "VERSACE EROS FLAME POUR HOMME EDP 100ML", "value": 36, "id": "s15"}, {"subtype": "Tester", "sku": 741060, "ean": 8011003845514, "productName": "VERSACE EROS FLAME POUR HOMME EDP 100ML TESTER", "value": 5, "id": "s16"}, {"subtype": "Vials", "sku": 741064, "ean": 8011003845422, "productName": "VERSACE EROS FLAME EDP 1ML VIALS", "value": 50, "id": "s17"}, {"subtype": "Fragrances", "sku": 742010, "ean": 8011003890804, "productName": "VERSACE EROS ENERGY POUR HOMME EDP 100ML", "value": 72, "id": "s18"}, {"subtype": "Fragrances", "sku": 742011, "ean": 8011003890811, "productName": "VERSACE EROS ENERGY POUR HOMME EDP 200ML", "value": 36, "id": "s19"}, {"subtype": "Tester", "sku": 742060, "ean": 8011003890842, "productName": "VERSACE EROS ENERGY POUR HOMME EDP 100ML TESTER", "value": 18, "id": "s20"}, {"subtype": "Vials", "sku": 742064, "ean": 8011003890835, "productName": "VERSACE EROS ENERGY POUR HOMME EDP 1ML VIALS", "value": 50, "id": "s21"}, {"subtype": "Fragrances", "sku": 750030, "ean": 8011003823529, "productName": "VERSACE EROS POUR FEMME EDP 50ML", "value": 6, "id": "s22"}, {"subtype": "Tester", "sku": 750060, "ean": 8011003823581, "productName": "VERSACE EROS POUR FEMME EDP 100ML TESTER", "value": 4, "id": "s23"}], "notes": "", "groupId": "g2"}, {"id": "x26", "month": "2026-10-01", "brand": "Versace", "product": "Atelier Collection", "digital": "Yes", "magazine": "1/2 Page Advetorial", "outpost": "", "window": "", "kol": "", "event": "", "deck": "WIP", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g2"}, {"id": "x27", "month": "2026-11-01", "brand": "Versace", "product": "Dylan Blush Pink", "digital": "Yes", "magazine": "1 Page ", "outpost": 1, "window": 1, "kol": 2, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g2"}, {"id": "x28", "month": "2026-12-01", "brand": "Versace", "product": "Crystal Emerald", "digital": "Yes", "magazine": "2 Page ", "outpost": 1, "window": "", "kol": 5, "event": "1 Mega Podium", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g2"}, {"id": "x29", "month": "2026-08-01", "brand": "Atkinsons", "product": "Reserve Collection: Shine Despite Everything", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "Done", "tmDeck": "", "approvalStatus": "Done", "executionStatus": "Done", "bdSkus": [], "notes": "", "groupId": "g2"}, {"id": "x30", "month": "2026-09-01", "brand": "Atkinsons", "product": "Reserve Collection: Born For Eternity", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "WIP", "tmDeck": "", "approvalStatus": "Feedback Received", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g2"}, {"id": "x31", "month": "2026-10-01", "brand": "Atkinsons", "product": "Reserve Collection: Platinum Blend", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g2"}, {"id": "x32", "month": "2026-11-01", "brand": "Atkinsons", "product": "Reserve Collection: Midnight Scented Dream", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g2"}, {"id": "x33", "month": "2026-12-01", "brand": "Atkinsons", "product": "Reserve Collection: Ambre Royal", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g2"}, {"id": "x34", "month": "2026-08-01", "brand": "Brunello Cucinelli", "product": "Enchanting Poems Collection", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "Done", "tmDeck": "", "approvalStatus": "Done", "executionStatus": "Done", "bdSkus": [], "notes": "", "groupId": "g2"}, {"id": "x35", "month": "2026-10-01", "brand": "Brunello Cucinelli", "product": "Pour Femme & Pour Homme", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g2"}, {"id": "x36", "month": "2026-12-01", "brand": "Brunello Cucinelli", "product": "New Product Launch", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g2"}, {"id": "x37", "month": "2026-09-01", "brand": "Moschino", "product": "Toy 2 Pearl", "digital": "Yes", "magazine": "1/2 Page Advetorial", "outpost": "", "window": "", "kol": "", "event": "", "deck": "WIP", "tmDeck": "", "approvalStatus": "Feedback Received", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g2"}, {"id": "x38", "month": "2026-11-01", "brand": "Moschino", "product": "Yummy & Gummy", "digital": "Yes", "magazine": "1 Page ", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g2"}, {"id": "x39", "month": "2026-12-01", "brand": "Moschino", "product": "SKU To be decided", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g2"}, {"id": "x40", "month": "2026-09-01", "brand": "Michael Kors", "product": "Pour Femme & Pour Homme", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "WIP", "tmDeck": "", "approvalStatus": "Feedback Received", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g2"}, {"id": "x41", "month": "2026-10-01", "brand": "Michael Kors", "product": "Pour Femme Absolu & Pour Homme Absolu", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g2"}, {"id": "x42", "month": "2026-12-01", "brand": "Michael Kors", "product": "New Product Launch", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g2"}, {"id": "x43", "month": "2026-10-01", "brand": "Missoni", "product": "Missoni Wave", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g2"}, {"id": "x44", "month": "2026-11-01", "brand": "Missoni", "product": "Missoni Pour Homme", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g2"}, {"id": "x45", "month": "2026-10-01", "brand": "Dsquared2", "product": "Icon", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g2"}, {"id": "x46", "month": "2026-12-01", "brand": "Dsquared2", "product": "Icon 2", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g2"}, {"id": "x47", "month": "2026-11-01", "brand": "BYREDO", "product": "Launch Event", "digital": "Yes", "magazine": "2 Page", "outpost": 1, "window": 1, "kol": 5, "event": "In-Store Event", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x48", "month": "2026-11-01", "brand": "BYREDO", "product": "Blanche", "digital": "Yes", "magazine": "2 Page", "outpost": "", "window": 1, "kol": 4, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x49", "month": "2026-03-01", "brand": "PENHALLIGONS", "product": "Finley Re-push", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x50", "month": "2026-06-01", "brand": "PENHALLIGONS", "product": "Bold blend", "digital": "Yes", "magazine": "1 Page", "outpost": 1, "window": 1, "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x51", "month": "2026-10-01", "brand": "PENHALLIGONS", "product": "Baroness", "digital": "Yes", "magazine": "", "outpost": 4, "window": 1, "kol": "", "event": "In-Store Event", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x52", "month": "2026-11-01", "brand": "PENHALLIGONS", "product": "Intense Collection", "digital": "Yes", "magazine": "", "outpost": "", "window": 1, "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x53", "month": "2026-12-01", "brand": "PENHALLIGONS", "product": "XMAS", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x54", "month": "2026-11-01", "brand": "BENNETON", "product": "Sisterland", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x55", "month": "2026-06-01", "brand": "BENNETON", "product": "Tribe Elxiir", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x56", "month": "2026-10-01", "brand": "BENNETON", "product": "Colors Ltd edt", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x57", "month": "2026-11-01", "brand": "BANDERAS", "product": "Icon For Her", "digital": "Yes", "magazine": "", "outpost": 4, "window": 2, "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x58", "month": "2026-12-01", "brand": "BANDERAS", "product": "SX", "digital": "Yes", "magazine": "", "outpost": 2, "window": 1, "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x59", "month": "2026-06-01", "brand": "RABBANE", "product": "Phantom a& Fame", "digital": "Yes", "magazine": "1 Page", "outpost": 2, "window": 2, "kol": 2, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x60", "month": "2026-12-01", "brand": "RABBANE", "product": "1 Million Night Elixir", "digital": "Yes", "magazine": "1 Page", "outpost": 2, "window": 2, "kol": 2, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x61", "month": "2026-08-01", "brand": "RABBANE", "product": "Invictus & Olympia ", "digital": "Yes", "magazine": "1 Page", "outpost": 3, "window": 1, "kol": 2, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x62", "month": "2026-10-01", "brand": "RABBANE", "product": "1M Black & Red", "digital": "Yes", "magazine": "1 Page", "outpost": 4, "window": 3, "kol": 2, "event": "In-Mall", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x63", "month": "2026-12-01", "brand": "RABBANE", "product": "1M Gold", "digital": "Yes", "magazine": "1 Page", "outpost": "", "window": "", "kol": 1, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x64", "month": "2026-12-01", "brand": "RABBANE", "product": "Fame Collector", "digital": "Yes", "magazine": "1 Page", "outpost": "", "window": "", "kol": 1, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x65", "month": "2026-03-01", "brand": "GAULTIER", "product": "Scandal MB", "digital": "Yes", "magazine": "1 Page", "outpost": 1, "window": "", "kol": 2, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x66", "month": "2026-05-01", "brand": "GAULTIER", "product": "Divine", "digital": "Yes", "magazine": "1 Page", "outpost": 2, "window": 1, "kol": 3, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x67", "month": "2026-06-01", "brand": "GAULTIER", "product": "Le Male", "digital": "Yes", "magazine": "1 Page", "outpost": 4, "window": 1, "kol": 2, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x68", "month": "2026-09-01", "brand": "GAULTIER", "product": "Lab + Leb", "digital": "Yes", "magazine": "1 Page", "outpost": 1, "window": "", "kol": 2, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x69", "month": "2026-12-01", "brand": "GAULTIER", "product": "XMAS", "digital": "Yes", "magazine": "1 Page", "outpost": 2, "window": 1, "kol": 2, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x70", "month": "2026-03-01", "brand": "CAROLINA HERRERA", "product": "Good Girl Re-Push", "digital": "Yes", "magazine": "1 Page", "outpost": 2, "window": 1, "kol": 2, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x71", "month": "2026-06-01", "brand": "CAROLINA HERRERA", "product": "GG (Jasmine Absolute) & BB (Cobalt)", "digital": "Yes", "magazine": "1 Page", "outpost": 1, "window": 1, "kol": 2, "event": "In-Mall", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x72", "month": "2026-08-01", "brand": "CAROLINA HERRERA", "product": "212 MEN VIP PARFUM", "digital": "Yes", "magazine": "1 Page", "outpost": 2, "window": 1, "kol": 2, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x73", "month": "2026-12-01", "brand": "CAROLINA HERRERA", "product": "XMAS", "digital": "Yes", "magazine": "1 Page", "outpost": 2, "window": 1, "kol": 2, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x74", "month": "2026-11-01", "brand": "DR. BARBARA STRUM", "product": "Plan 1 ", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x75", "month": "2026-12-01", "brand": "DR. BARBARA STRUM", "product": "Plan 2 ", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g3"}, {"id": "x76", "month": "2026-03-01", "brand": "NARCISO RODRIGUEZ", "product": "For Her New EDPI - Repush", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [{"subtype": "Fragrances", "sku": 82001006101, "ean": 3423222126667, "productName": "NR NN NEW EDP-25-LS-30ML JULY", "value": "To Check", "id": "s24"}, {"subtype": "Fragrances", "sku": 82000964101, "ean": 3423222121976, "productName": "NR NN NEW EDP-25-90ML", "value": "In BD", "id": "s25"}, {"subtype": "Miniature", "sku": 82000970101, "ean": 3423222122034, "productName": "NR NN NEW EDP-25-GWP-PURSE SP 10ML", "value": "NA", "id": "s26"}, {"subtype": "Sample", "sku": 82000967101, "ean": 3423222122065, "productName": "NR NN NEW EDP-25-1PC SAMP-0.6ML", "value": "NA", "id": "s27"}, {"subtype": "Tester", "sku": 82000965101, "ean": 3423222121983, "productName": "NR NN NEW EDP-25-TT-90ML", "value": "NA", "id": "s28"}], "notes": "", "groupId": "g4"}, {"id": "x77", "month": "2026-07-01", "brand": "NARCISO RODRIGUEZ", "product": "FH Pure Musc Santal & FH Santal", "digital": "Yes", "magazine": "", "outpost": 2, "window": 1, "kol": 2, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [{"subtype": "Fragrances", "sku": 82001205102, "ean": "3423222143947", "productName": "NR FH PURE MUSC BLANC EDPI-26-100ML", "value": "In BD", "id": "s29"}, {"subtype": "Miniature", "sku": 82001210101, "ean": "3423222143992", "productName": "NR FH PURE MUSC BLANC EDPI-26-GWP-4ML", "value": "NA", "id": "s30"}, {"subtype": "Tester", "sku": 82001207102, "ean": "3423222143961", "productName": "NR FH PURE MUSC BLANC EDPI-26-TT-100ML", "value": "NA", "id": "s31"}], "notes": "", "groupId": "g4"}, {"id": "x78", "month": "2026-07-01", "brand": "NARCISO RODRIGUEZ", "product": "Radiante - Repush'26", "digital": "Yes", "magazine": "", "outpost": 1, "window": 1, "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [{"subtype": "Fragrances", "sku": 82000964101, "ean": 3423222121976, "productName": "NR NN NEW EDP-25-90ML", "value": "In BD", "id": "s32"}, {"subtype": "Miniature", "sku": 82000970101, "ean": 3423222122034, "productName": "NR NN NEW EDP-25-GWP-PURSE SP 10ML", "value": "NA", "id": "s33"}, {"subtype": "Sample", "sku": 82000967101, "ean": 3423222122065, "productName": "NR NN NEW EDP-25-1PC SAMP-0.6ML", "value": "NA", "id": "s34"}, {"subtype": "Tester", "sku": 82000965101, "ean": 3423222121983, "productName": "NR NN NEW EDP-25-TT-90ML", "value": "NA", "id": "s35"}], "notes": "", "groupId": "g4"}, {"id": "x79", "month": "2026-04-01", "brand": "ISSEY MIYAKE", "product": "Le Sel D'issey EDT - Repush", "digital": "Yes", "magazine": "", "outpost": 1, "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [{"subtype": "Fragrances", "sku": 31800543101, "ean": 3423222106300, "productName": "Le Sel D'Issey EDT 50 ml", "value": "In BD", "id": "s36"}, {"subtype": "Fragrances", "sku": 31800545101, "ean": 3423222106324, "productName": "Le Sel D'Issey EDT 100 ml", "value": "In BD", "id": "s37"}], "notes": "", "groupId": "g4"}, {"id": "x80", "month": "2026-08-01", "brand": "ISSEY MIYAKE", "product": "Lumiere EDP", "digital": "Yes", "magazine": "", "outpost": 1, "window": 1, "kol": 2, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [{"subtype": "Fragrances", "sku": 31800762101, "ean": "3423222132019", "productName": "IM LUMIERE EDP 26 - 50ML", "value": "NA", "id": "s38"}, {"subtype": "Fragrances", "sku": 31800764101, "ean": "3423222132033", "productName": "IM LUMIERE EDP 26 - 100ML", "value": "In BD", "id": "s39"}, {"subtype": "Miniature", "sku": 31800771101, "ean": "3423222132101", "productName": "IM LUMIERE EDP 26 - 10ML - STD SP", "value": "NA", "id": "s40"}, {"subtype": "Miniature", "sku": 31800772101, "ean": "3423222132118", "productName": "IM LUMIERE EDP 26 - 4ML - STD SP", "value": "NA", "id": "s41"}, {"subtype": "Tester", "sku": 31800766101, "ean": "3423222132057", "productName": "IM LUMIERE EDP 26 - 100ML - TT", "value": "NA", "id": "s42"}], "notes": "", "groupId": "g4"}, {"id": "x81", "month": "2026-10-01", "brand": "ISSEY MIYAKE", "product": "Le Sel D'issey EDP", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": 1, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g4"}, {"id": "x82", "month": "2026-11-01", "brand": "ISSEY MIYAKE", "product": "Les'Absolu D'Eau", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [{"subtype": "Fragrances", "sku": "31800832101", "ean": "3423222134839", "productName": "IM EH EDP ESSENTIELLE 26 - 125ML", "value": "To BD", "id": "s43"}, {"subtype": "Miniature", "sku": "31800835101", "ean": "3423222134860", "productName": "IM EH EDP ESSENTIELLE 26 - GWP 4ML", "value": "NA", "id": "s44"}, {"subtype": "POSM", "sku": 31800831101, "ean": 3423222134822, "productName": "IM EH EDP ESSENTIELLE 26 - BC GIFT 75ML", "value": "NA", "id": "s45"}, {"subtype": "Tester", "sku": 31800833101, "ean": 3423222134846, "productName": "IM EH EDP ESSENTIELLE 26 - 125ML TT", "value": "NA", "id": "s46"}, {"subtype": "Vials", "sku": 31800837101, "ean": 3423222134884, "productName": "IM EH EDP ESSENTIELLE 26 - 0,6ML - 1PC", "value": "NA", "id": "s47"}, {"subtype": "Fragrances", "sku": "31800827101", "ean": "3423222134785", "productName": "IM EI EDP ESSENTIELLE 26 - 100ML", "value": "To BD", "id": "s48"}, {"subtype": "Miniature", "sku": "31800834101", "ean": "3423222134853", "productName": "IM EI EDP ESSENTIELLE 26 - GWP 4ML", "value": "NA", "id": "s49"}, {"subtype": "Tester", "sku": 31800828101, "ean": 3423222134792, "productName": "IM EI EDP ESSENTIELLE 26 - 100ML TT", "value": "NA", "id": "s50"}, {"subtype": "Vials", "sku": 31800836101, "ean": 3423222134877, "productName": "IM EI EDP ESSENTIELLE 26 - 0,6ML - 1PC", "value": "NA", "id": "s51"}], "notes": "", "groupId": "g4"}, {"id": "x83", "month": "2026-12-01", "brand": "ISSEY MIYAKE", "product": "Lumiere EDP - Repush", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [{"subtype": "Fragrances", "sku": 31800762101, "ean": "3423222132019", "productName": "IM LUMIERE EDP 26 - 50ML", "value": "NA", "id": "s52"}, {"subtype": "Fragrances", "sku": 31800764101, "ean": "3423222132033", "productName": "IM LUMIERE EDP 26 - 100ML", "value": "In BD", "id": "s53"}, {"subtype": "Miniature", "sku": 31800771101, "ean": "3423222132101", "productName": "IM LUMIERE EDP 26 - 10ML - STD SP", "value": "NA", "id": "s54"}, {"subtype": "Miniature", "sku": 31800772101, "ean": "3423222132118", "productName": "IM LUMIERE EDP 26 - 4ML - STD SP", "value": "NA", "id": "s55"}, {"subtype": "Tester", "sku": 31800766101, "ean": "3423222132057", "productName": "IM LUMIERE EDP 26 - 100ML - TT", "value": "NA", "id": "s56"}], "notes": "", "groupId": "g4"}, {"id": "x84", "month": "2026-08-01", "brand": "SERGE LUTENS", "product": "Noire New EDP", "digital": "Yes", "magazine": "1 Page", "outpost": 1, "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [{"subtype": "Fragrances", "sku": 82100795101, "ean": "3700358226219", "productName": "SL CN LA NUIT TOMBEE-100ML", "value": "In BD", "id": "s57"}, {"subtype": "Miniature", "sku": 82100800101, "ean": "3700358226264", "productName": "SL CN LA NUIT TOMBEE-GWP-5ML", "value": "NA", "id": "s58"}, {"subtype": "Sample", "sku": 82100798101, "ean": "3700358226240", "productName": "SL CN LA NUIT TOMBEE-1PC SAMP-1ML", "value": "NA", "id": "s59"}, {"subtype": "Tester", "sku": 82100797101, "ean": "3700358226233", "productName": "SL CN LA NUIT TOMBEE-TT 50ML", "value": "NA", "id": "s60"}], "notes": "", "groupId": "g4"}, {"id": "x85", "month": "2026-11-01", "brand": "SERGE LUTENS", "product": "Noire New EDP - Repush", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [{"subtype": "Fragrances", "sku": 82100795101, "ean": "3700358226219", "productName": "SL CN LA NUIT TOMBEE-100ML", "value": "In BD", "id": "s61"}, {"subtype": "Miniature", "sku": 82100800101, "ean": "3700358226264", "productName": "SL CN LA NUIT TOMBEE-GWP-5ML", "value": "NA", "id": "s62"}, {"subtype": "Sample", "sku": 82100798101, "ean": "3700358226240", "productName": "SL CN LA NUIT TOMBEE-1PC SAMP-1ML", "value": "NA", "id": "s63"}, {"subtype": "Tester", "sku": 82100797101, "ean": "3700358226233", "productName": "SL CN LA NUIT TOMBEE-TT 50ML", "value": "NA", "id": "s64"}], "notes": "", "groupId": "g4"}, {"id": "x86", "month": "2026-03-01", "brand": "MONTALE", "product": "Intense Café", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g5"}, {"id": "x87", "month": "2026-06-01", "brand": "MONTALE", "product": "Arabians Musk", "digital": "Yes", "magazine": "", "outpost": 1, "window": 1, "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g5"}, {"id": "x88", "month": "2026-09-01", "brand": "MONTALE", "product": "Oud Sapport/Arabians Tonka", "digital": "Yes", "magazine": "", "outpost": "", "window": 1, "kol": 1, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g5"}, {"id": "x89", "month": "2026-03-01", "brand": "MANCERA", "product": "Coco Vanille", "digital": "Yes", "magazine": "1 Page", "outpost": 1, "window": "", "kol": 1, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g5"}, {"id": "x90", "month": "2026-06-01", "brand": "MANCERA", "product": "Cedrat Boise/French Riviera", "digital": "Yes", "magazine": "", "outpost": 2, "window": "", "kol": 1, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g5"}, {"id": "x91", "month": "2026-07-01", "brand": "MANCERA", "product": "Xplicit Vanilla", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g5"}, {"id": "x92", "month": "2026-07-01", "brand": "MANCERA", "product": "Amore Café", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": 1, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g5"}, {"id": "x93", "month": "2026-07-01", "brand": "GOLDFIELD & BANKS", "product": "Brand Launch Event", "digital": "Yes", "magazine": "2 Page", "outpost": "", "window": "", "kol": 10, "event": "In-Store Event", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [{"subtype": "Fragrances", "sku": "BO00401", "ean": 9369999068219, "productName": "GOLDFIELD & BANKS PACIFIC ROCK MOSS SOUTH COAST EDP 100ML", "value": 20, "id": "s65"}, {"subtype": "Fragrances", "sku": "BO00402", "ean": 9356353000015, "productName": "GOLDFIELD & BANKS PACIFIC ROCK MOSS SOUTH COAST EDP 50ML", "value": 16, "id": "s66"}, {"subtype": "Fragrances", "sku": "BO202103", "ean": 9356353000497, "productName": "GOLDFIELD & BANKS SUNSET HOUR BROOME EDP 100ML", "value": 20, "id": "s67"}, {"subtype": "Fragrances", "sku": "BO202104", "ean": 9356353000503, "productName": "GOLDFIELD & BANKS SUNSET HOUR BROOME PERFUME EDP 50ML", "value": 16, "id": "s68"}, {"subtype": "Fragrances", "sku": "BO222202", "ean": 9356353000282, "productName": "GOLDFIELD & BANKS BOHEMIAN LIME BYRON BAY PERFUME EDP 50ML", "value": 18, "id": "s69"}, {"subtype": "Fragrances", "sku": "GB010110", "ean": 9356353000978, "productName": "GOLDFIELD & BANKS INGENIOUS GINGER PARFUM EDP 100ML", "value": 18, "id": "s70"}, {"subtype": "Tester", "sku": "GB010110T", "ean": 9356353001012, "productName": "GOLDFIELD & BANKS INGENIOUS GINGER PERFUME EDP 100ML TESTER", "value": 3, "id": "s71"}, {"subtype": "Fragrances", "sku": "GB010112", "ean": 9356353001784, "productName": "GOLDFIELD & BANKS PACIFIC ROCK FLOWER EDP 100ML", "value": 16, "id": "s72"}, {"subtype": "Tester", "sku": "GB010112T", "ean": 9356353001791, "productName": "GOLDFIELD & BANKS PACIFIC ROCK FLOWER PARFUM EDP 100ML TESTER", "value": 3, "id": "s73"}, {"subtype": "Fragrances", "sku": "GB010202", "ean": 9356353000664, "productName": "GOLDFIELD & BANKS PURPLE SUEDE LAVENDER EDP 100ML", "value": 20, "id": "s74"}, {"subtype": "Tester", "sku": "GB010202T", "ean": 9356353000718, "productName": "GOLDFIELD & BANKS PURPLE SUEDE PERFUME EDP 100ML TESTER", "value": 3, "id": "s75"}, {"subtype": "Fragrances", "sku": "GB010203", "ean": 9356353000794, "productName": "GOLDFIELD & BANKS ISLAND LUSH SANDALWOOD PERFUME EDP 100ML", "value": 20, "id": "s76"}, {"subtype": "Tester", "sku": "GB010203T", "ean": 9356353000954, "productName": "GOLDFIELD & BANKS ISLAND LUSH PERFUME EDP 100ML TESTER", "value": 3, "id": "s77"}, {"subtype": "Fragrances", "sku": "GB010205", "ean": 9356353002033, "productName": "GOLDFIELD & BANKS TALES OF AMBER AMBERGRIS EDP 100ML", "value": 16, "id": "s78"}, {"subtype": "Tester", "sku": "GB010205T", "ean": 9356353002071, "productName": "GOLDFIELD & BANKS TALES OF AMBER EDP 100ML TESTER", "value": 3, "id": "s79"}, {"subtype": "Fragrances", "sku": "GB010206", "ean": 9356353002439, "productName": "GOLDFIELD & BANKS ROSE MAGNITUDE BOTANICAL SERIES EDP 100ML", "value": 20, "id": "s80"}, {"subtype": "Tester", "sku": "GB010206T", "ean": 9356353002491, "productName": "GOLDFIELD & BANKS ROSE MAGNITUDE EDP 100ML TESTER", "value": 3, "id": "s81"}, {"subtype": "Fragrances", "sku": "GB020111", "ean": 9356353001845, "productName": "GOLDFIELD & BANKS MYSTIC BLISS EDP 50ML", "value": 8, "id": "s82"}, {"subtype": "Fragrances", "sku": "GB020112", "ean": 9356353002323, "productName": "GOLDFIELD & BANKS PACIFIC ROCK FLOWER EDP 50ML", "value": 10, "id": "s83"}, {"subtype": "Vial", "sku": "GB040104", "ean": 9356353000558, "productName": "GOLDFIELD & BANKS PACIFIC ROCK MOSS SOUTH COAST EDP 2ML VIALS", "value": 20, "id": "s84"}, {"subtype": "Vial", "sku": "GB040108", "ean": 9356353000619, "productName": "GOLDFIELD & BANKS BOHEMIAN LIME EDP 2ML VIALS", "value": 20, "id": "s85"}, {"subtype": "Vial", "sku": "GB040109", "ean": 9356353000633, "productName": "GOLDFIELD & BANKS SUNSET HOUR PERFUME EDP 2ML VIALS", "value": 20, "id": "s86"}, {"subtype": "Vial", "sku": "GB040110", "ean": 9356353001005, "productName": "GOLDFIELD & BANKS INGENIOUS GINGER EDP 2ML VIALS", "value": 20, "id": "s87"}, {"subtype": "Vial", "sku": "GB040112", "ean": 9356353001821, "productName": "GOLDFIELD & BANKS PACIFIC ROCK FLOWER EDP 2ML VIALS", "value": 20, "id": "s88"}, {"subtype": "Vial", "sku": "GB040203", "ean": 9356353000817, "productName": "GOLDFIELD & BANKS ISLAND LUSH PERFUME EDP 2ML VIALS", "value": 20, "id": "s89"}, {"subtype": "Vial", "sku": "GB040205", "ean": 9356353002057, "productName": "GOLDFIELD & BANKS TALES OF AMBER AMBERGRIS EDP 2ML VIALS", "value": 20, "id": "s90"}, {"subtype": "Vial", "sku": "GB040206", "ean": 9356353002446, "productName": "GOLDFIELD & BANKS ROSE MAGNITUDE EDP 2ML VIALS", "value": 20, "id": "s91"}, {"subtype": "Tester", "sku": "GB201710", "ean": 9356353000169, "productName": "GOLDFIELD & BANKS PACIFIC ROCK MOSS EDP 100ML TESTER", "value": 4, "id": "s92"}, {"subtype": "POSM", "sku": "GB20260106DP", "ean": 9356353002484, "productName": "GOLDFIELD & BANKS ROSE MAGNITUDE STAND POSM", "value": 2, "id": "s93"}, {"subtype": "Tester", "sku": "GB2202003", "ean": 9356353000527, "productName": "GOLDFIELD & BANKS SUNSET HOUR PERFUME EDP 100ML TESTER", "value": 4, "id": "s94"}, {"subtype": "Tester", "sku": "GB222001", "ean": 9356353000220, "productName": "GOLDFIELD & BANKS BOHEMIAN LIME PERFUME EDP 100ML TESTER", "value": 3, "id": "s95"}, {"subtype": "Gift Set", "sku": "GB250104", "ean": 9356353001975, "productName": "GOLDFIELD & BANKS PACIFIC ROCK MOSS SOUTH COAST EDP 100ML+10ML+100ML+10ML GIFT SET", "value": 2, "id": "s96"}, {"subtype": "Gift Set", "sku": "GB250109", "ean": 9356353001968, "productName": "GOLDFIELD & BANKS SUNSET HOUR BROOME EDP 100ML+10ML+100ML+10ML GIFT SET", "value": 2, "id": "s97"}, {"subtype": "Gift Set", "sku": "GB250201", "ean": 9356353001982, "productName": "GOLDFIELD & BANKS SILKY WOODS AGARWOOD EDP 100ML+10ML+100ML+10ML GIFT SET", "value": 2, "id": "s98"}, {"subtype": "POSM", "sku": "GB26240115", "ean": 9356353002460, "productName": "GOLDFIELD & BANKS ROSE MAGNITUDE BLOTTERS POSM", "value": 1, "id": "s99"}], "notes": "", "groupId": "g6"}, {"id": "x94", "month": "2026-09-01", "brand": "GOLDFIELD & BANKS", "product": "Ingenious Ginger", "digital": "Yes", "magazine": "", "outpost": 1, "window": 1, "kol": 2, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [{"subtype": "Tester", "sku": "GB010110T", "ean": 9356353001012, "productName": "GOLDFIELD & BANKS INGENIOUS GINGER PERFUME EDP 100ML TESTER", "value": 3, "id": "s100"}, {"subtype": "Vial", "sku": "GB040110", "ean": 9356353001005, "productName": "GOLDFIELD & BANKS INGENIOUS GINGER EDP 2ML VIALS", "value": 20, "id": "s101"}], "notes": "", "groupId": "g6"}, {"id": "x95", "month": "2026-10-01", "brand": "GOLDFIELD & BANKS", "product": "Rose Magnitude", "digital": "Yes", "magazine": "", "outpost": 1, "window": 1, "kol": 1, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [{"subtype": "Tester", "sku": "GB010206T", "ean": 9356353002491, "productName": "GOLDFIELD & BANKS ROSE MAGNITUDE EDP 100ML TESTER", "value": 3, "id": "s102"}, {"subtype": "POSM", "sku": "GB20260106DP", "ean": 9356353002484, "productName": "GOLDFIELD & BANKS ROSE MAGNITUDE STAND POSM", "value": 2, "id": "s103"}, {"subtype": "Vial", "sku": "GB040206", "ean": 9356353002446, "productName": "GOLDFIELD & BANKS ROSE MAGNITUDE EDP 2ML VIALS", "value": 20, "id": "s104"}], "notes": "", "groupId": "g6"}, {"id": "x96", "month": "2026-11-01", "brand": "GOLDFIELD & BANKS", "product": "Pacific Rock Flower ", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [{"subtype": "Tester", "sku": "GB010112T", "ean": 9356353001791, "productName": "GOLDFIELD & BANKS PACIFIC ROCK FLOWER PARFUM EDP 100ML TESTER", "value": 3, "id": "s105"}, {"subtype": "Fragrances", "sku": "GB020112", "ean": 9356353002323, "productName": "GOLDFIELD & BANKS PACIFIC ROCK FLOWER EDP 50ML", "value": 10, "id": "s106"}, {"subtype": "Vial", "sku": "GB040112", "ean": 9356353001821, "productName": "GOLDFIELD & BANKS PACIFIC ROCK FLOWER EDP 2ML VIALS", "value": 20, "id": "s107"}], "notes": "", "groupId": "g6"}, {"id": "x97", "month": "2026-12-01", "brand": "GOLDFIELD & BANKS", "product": "Rose Magnitude - Repush", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [{"subtype": "Tester", "sku": "GB010206T", "ean": 9356353002491, "productName": "GOLDFIELD & BANKS ROSE MAGNITUDE EDP 100ML TESTER", "value": 3, "id": "s108"}, {"subtype": "POSM", "sku": "GB20260106DP", "ean": 9356353002484, "productName": "GOLDFIELD & BANKS ROSE MAGNITUDE STAND POSM", "value": 2, "id": "s109"}, {"subtype": "Vial", "sku": "GB040206", "ean": 9356353002446, "productName": "GOLDFIELD & BANKS ROSE MAGNITUDE EDP 2ML VIALS", "value": 20, "id": "s110"}], "notes": "", "groupId": "g6"}, {"id": "x98", "month": "2026-07-01", "brand": "ORMONDE JAYNE", "product": "Brand Launch", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g7"}, {"id": "x99", "month": "2026-08-01", "brand": "ORMONDE JAYNE", "product": "Montabaco Intensivo", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": 1, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [{"subtype": "Fragrances", "sku": "FC881", "ean": 5060238286343, "productName": "ORMONDE JAYNE MONTABACO INTENSIVO PARFUM EDP 88ML", "value": 8, "id": "s111"}, {"subtype": "Gift Set", "sku": "FCTL1", "ean": 5060238286374, "productName": "ORMONDE JAYNE MONTABACO INTENSIVO PARFUM EDP (4X10ML)-40ML GIFT SET", "value": 8, "id": "s112"}, {"subtype": "Vial", "sku": "FCSAMP1", "ean": 5060238287432, "productName": "ORMONDE JAYNE MONTABACO INTENSIVO EDP 2.5ML VIALS", "value": 60, "id": "s113"}, {"subtype": "Miniature", "sku": "FC101", "ean": 5060238287654, "productName": "ORMONDE JAYNE MONTABACO INTENSIVO LUXURY TRAVEL PARFUM EDP 10ML MINIATURE", "value": 8, "id": "s114"}, {"subtype": "Tester", "sku": "TFC881", "ean": 5060238287845, "productName": "ORMONDE JAYNE MONTABACO INTENSIVO PARFUM EDP 88ML TESTER", "value": 2, "id": "s115"}], "notes": "", "groupId": "g7"}, {"id": "x100", "month": "2026-09-01", "brand": "ORMONDE JAYNE", "product": "Nawab of Oudh INT", "digital": "Yes", "magazine": "", "outpost": 1, "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [{"subtype": "Fragrances", "sku": "FC884", "ean": 5060238286367, "productName": "ORMONDE JAYNE NAWAB OF OUDH INTENSIVO PARFUM EDP 88ML", "value": 8, "id": "s116"}, {"subtype": "Vial", "sku": "FCSAMP4", "ean": 5060238287456, "productName": "ORMONDE JAYNE NAWAB OF OUDH INTENSIVO EDP 2.5ML VIALS", "value": 60, "id": "s117"}, {"subtype": "Gift Set", "sku": "FCTL4", "ean": 5060238287647, "productName": "ORMONDE JAYNE NAWAB OF OUDH INTENSIVO PARFUM EDP (4X10ML)-40ML GIFT SET", "value": 8, "id": "s118"}, {"subtype": "Miniature", "sku": "FC104", "ean": 5060238287678, "productName": "ORMONDE JAYNE NAWAB OF OUDH INTENSIVO LUXURY TRAVEL PARFUM EDP 10ML MINIATURE", "value": 8, "id": "s119"}, {"subtype": "Tester", "sku": "TFC884", "ean": 5060238287869, "productName": "ORMONDE JAYNE NAWAB OF OUDH INTENSIVO PARFUM EDP 88ML TESTER", "value": 4, "id": "s120"}], "notes": "", "groupId": "g7"}, {"id": "x101", "month": "2026-11-01", "brand": "ORMONDE JAYNE", "product": "Ambre Royal Parfum", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [{"subtype": "Fragrances", "sku": "SC8814", "ean": 5060238286169, "productName": "ORMONDE JAYNE AMBRE ROYAL PARFUM EDP 88ML", "value": 8, "id": "s121"}, {"subtype": "Vial", "sku": "SCSAMP14", "ean": 5060238287340, "productName": "ORMONDE JAYNE LONDON AMBRE ROYAL PARFUM EDP 2.5ML VIALS", "value": 60, "id": "s122"}, {"subtype": "Tester", "sku": "TSC8814", "ean": 5060238287760, "productName": "ORMONDE JAYNE AMBRE ROYAL PARFUM EDP 88ML TESTER", "value": 2, "id": "s123"}], "notes": "", "groupId": "g7"}, {"id": "x102", "month": "2026-12-01", "brand": "ORMONDE JAYNE", "product": "Levant EDP", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": 1, "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [{"subtype": "Fragrances", "sku": "LR882", "ean": 5060238285582, "productName": "ORMONDE JAYNE LEVANT EDP 88ML", "value": 8, "id": "s124"}, {"subtype": "Vial", "sku": "LRSAMP2", "ean": 5060238287371, "productName": "ORMONDE JAYNE LEVANT EDP 2.5ML VIALS", "value": 60, "id": "s125"}, {"subtype": "Tester", "sku": "TLR882", "ean": 5060238287791, "productName": "ORMONDE JAYNE LEVANT EDP 88ML TESTER", "value": 2, "id": "s126"}], "notes": "", "groupId": "g7"}, {"id": "x103", "month": "2026-12-01", "brand": "ROJA", "product": "No Visibility", "digital": "Yes", "magazine": "", "outpost": "", "window": "", "kol": "", "event": "", "deck": "", "tmDeck": "", "approvalStatus": "", "executionStatus": "", "bdSkus": [], "notes": "", "groupId": "g8"}]};
+</script>
+<script>
+(function(){
+  const GROUP_TAG_COLORS = ['#4FA8FF','#35D6C4','#3DDC84','#FFB454','#FF5C6C','#A78BFA','#F472B6','#60E1E0'];
+  const APPROVAL_OPTIONS = ['', 'To be Sent', 'Feedback Received', 'Approved', 'Done'];
+  const EXECUTION_OPTIONS = ['', 'To be Executed', 'Done'];
+
+  function buildMonthOptions(){
+    const opts = [];
+    for(let y = 2025; y <= 2028; y++){
+      for(let m = 0; m < 12; m++){
+        const mm = String(m+1).padStart(2,'0');
+        opts.push({ value: `${y}-${mm}-01`, label: new Date(y,m,1).toLocaleDateString('en-US',{month:'long', year:'numeric'}) });
+      }
+    }
+    return opts;
+  }
+  const MONTH_OPTIONS = buildMonthOptions();
+
+  const state = {
+    groups: [], activations: [], activeTab: 'overview', renamingGroupId: null, justAddedId: null,
+    storageOk: true, expanded: new Set(),
+    filter: { search:'', approval:'__ALL__', execution:'__ALL__', overdueOnly:false }
+  };
+
+  const slug = s => String(s||'blank').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') || 'blank';
+  const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const uid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+  async function loadKey(key, fallbackFn){
+    try{
+      const res = await window.storage.get(key, true);
+      if(res && res.value) return JSON.parse(res.value);
+      throw new Error('empty');
+    }catch(e){
+      const fallback = fallbackFn();
+      try{ await window.storage.set(key, JSON.stringify(fallback), true); }catch(e2){ state.storageOk = false; }
+      return fallback;
+    }
+  }
+  async function saveGroups(){ try{ await window.storage.set('groups', JSON.stringify(state.groups), true); }catch(e){ state.storageOk=false; } }
+  async function saveActivations(){ try{ await window.storage.set('activations', JSON.stringify(state.activations), true); }catch(e){ state.storageOk=false; } }
+
+  async function init(){
+    state.groups = await loadKey('groups', () => SEED_DATA.groups);
+    state.activations = await loadKey('activations', () => SEED_DATA.activations);
+    render();
+  }
+
+  function lastUpdated(){
+    let max = null;
+    state.activations.forEach(a => { if(a.updatedAt && (!max || a.updatedAt > max)) max = a.updatedAt; });
+    return max;
+  }
+  function timeAgo(iso){
+    if(!iso) return 'now';
+    const diff = Date.now() - new Date(iso).getTime();
+    const m = Math.floor(diff/60000);
+    if(m < 1) return 'just now';
+    if(m < 60) return m + 'm ago';
+    const h = Math.floor(m/60);
+    if(h < 24) return h + 'h ago';
+    return Math.floor(h/24) + 'd ago';
+  }
+  function groupName(id){ const g = state.groups.find(g=>g.id===id); return g? g.name : id; }
+  function groupColor(id){ const idx = state.groups.findIndex(g=>g.id===id); return GROUP_TAG_COLORS[idx % GROUP_TAG_COLORS.length]; }
+  function monthLabel(m){ if(!m) return '—'; const d = new Date(m+'T00:00:00'); if(isNaN(d)) return m; return d.toLocaleDateString('en-US',{month:'short',year:'numeric'}); }
+  function monthIndex(m){ const d = new Date(m+'T00:00:00'); if(isNaN(d)) return null; return d.getFullYear()*12 + d.getMonth(); }
+  function currentMonthIndex(){ const t = new Date(); return t.getFullYear()*12 + t.getMonth(); }
+  function isOverdue(a){ const idx = monthIndex(a.month); if(idx === null) return false; return idx < currentMonthIndex() && a.executionStatus !== 'Done'; }
+  function options(list, current){ return list.map(o => `<option value="${esc(o)}" ${o===current?'selected':''}>${o===''?'—':esc(o)}</option>`).join(''); }
+  function monthOptionsHtml(current){
+    let found = MONTH_OPTIONS.some(o => o.value === current);
+    let extra = (!found && current) ? `<option value="${esc(current)}" selected>${esc(monthLabel(current))}</option>` : '';
+    return extra + MONTH_OPTIONS.map(o => `<option value="${o.value}" ${o.value===current?'selected':''}>${o.label}</option>`).join('');
+  }
+
+  function bdSummary(skus){
+    if(!skus || !skus.length) return {text:'—', has:false};
+    const nums = skus.filter(s => s.value !== '' && !isNaN(Number(s.value)));
+    if(nums.length === skus.length){
+      const sum = nums.reduce((t,s) => t + Number(s.value), 0);
+      return {text: `${skus.length} SKU${skus.length===1?'':'s'} · ${sum} units`, has:true};
+    }
+    const counts = {};
+    skus.forEach(s => { const k = s.value || '—'; counts[k] = (counts[k]||0)+1; });
+    return {text: Object.entries(counts).map(([k,v]) => `${v} ${k}`).join(' · '), has:true};
+  }
+
+  function matchesFilter(a){
+    const f = state.filter;
+    if(f.overdueOnly && !isOverdue(a)) return false;
+    if(f.approval !== '__ALL__' && (a.approvalStatus||'') !== f.approval) return false;
+    if(f.execution !== '__ALL__' && (a.executionStatus||'') !== f.execution) return false;
+    if(f.search){
+      const q = f.search.toLowerCase();
+      const hay = `${a.brand} ${a.product} ${a.notes}`.toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  }
+
+  function render(){
+    const app = document.getElementById('app');
+    app.innerHTML = `<div class="topbar"></div>` + renderHeader() + renderTabs() +
+      (state.activeTab === 'overview' ? renderOverview() : renderGroupView(state.activeTab));
+    if(state.renamingGroupId){ const inp = app.querySelector('.tab-rename-input'); if(inp){ inp.focus(); inp.select(); } }
+    if(state.justAddedId){ const inp = app.querySelector(`input[data-id="${state.justAddedId}"][data-field="brand"]`); if(inp) inp.focus(); state.justAddedId = null; }
+  }
+
+  function refreshGroupTable(){
+    const el = document.getElementById('group-table-region');
+    if(el) el.innerHTML = renderGroupTable(state.activeTab);
+  }
+
+  function renderHeader(){
+    const lu = lastUpdated();
+    const warning = !state.storageOk ? `<div class="storage-warning">Changes aren't saving right now — storage is unavailable in this preview.</div>` : '';
+    return `
+      <div class="header">
+        <div>
+          <h1 class="wordmark"><span class="dot"></span>Activation Board</h1>
+          <div class="tagline">Live activation database — edit any field directly, everyone with this link sees the same board.</div>
+        </div>
+        <div class="sync-note"><span class="sync-dot ${state.storageOk?'':'warn'}"></span> ${state.storageOk ? 'LIVE &middot; updated ' + timeAgo(lu) : 'NOT SAVING'}</div>
+      </div>
+      ${warning}
+    `;
+  }
+
+  function renderTabs(){
+    let tabs = `<button class="tab ${state.activeTab==='overview'?'active':''}" data-tab="overview">Overview</button>`;
+    state.groups.forEach(g => {
+      if(state.renamingGroupId === g.id){
+        tabs += `<span class="tab active"><input class="tab-rename-input" data-action="rename-group-input" data-id="${g.id}" value="${esc(g.name)}"></span>`;
+      } else {
+        tabs += `<button class="tab ${state.activeTab===g.id?'active':''}" data-tab="${g.id}">${esc(g.name)}<span class="tab-rename-btn" data-action="start-rename" data-id="${g.id}" role="button" tabindex="0">&#9998;</span></button>`;
+      }
+    });
+    return `<div class="tabs">${tabs}</div>`;
+  }
+
+  function renderOverview(){
+    const groupCounts = {};
+    state.groups.forEach(g => groupCounts[g.id] = 0);
+    state.activations.forEach(a => { if(groupCounts[a.groupId] !== undefined) groupCounts[a.groupId]++; });
+    const groupCards = state.groups.map(g => `
+      <div class="stat-card" style="border-left-color:${groupColor(g.id)}">
+        <div class="stat-num">${groupCounts[g.id]}</div>
+        <div class="stat-label">${esc(g.name)}</div>
+      </div>`).join('');
+
+    const execCounts = {'':0, 'To be Executed':0, 'Done':0};
+    state.activations.forEach(a => { const k = EXECUTION_OPTIONS.includes(a.executionStatus)?a.executionStatus:''; execCounts[k] = (execCounts[k]||0)+1; });
+    const overdueCount = state.activations.filter(isOverdue).length;
+    const execCards = [
+      {k:'', label:'Not started', cls:'c-grey'},
+      {k:'To be Executed', label:'To be executed', cls:'c-amber'},
+      {k:'Done', label:'Done', cls:'c-green'}
+    ].map(x => `<div class="stat-card ${x.cls}"><div class="stat-num">${execCounts[x.k]}</div><div class="stat-label">${x.label}</div></div>`).join('') +
+      `<div class="stat-card" style="border-left-color:var(--red)"><div class="stat-num" style="color:var(--red)">${overdueCount}</div><div class="stat-label">Overdue</div></div>`;
+
+    const thisIdx = currentMonthIndex();
+    const active = state.activations.filter(a => a.executionStatus !== 'Done').slice()
+      .sort((a,b) => (a.month||'').localeCompare(b.month||''));
+
+    const upcomingRows = active.length ? active.slice(0,25).map(a => {
+      const idx = monthIndex(a.month);
+      let tag = '', cls = '';
+      if(idx !== null){
+        const diff = idx - thisIdx;
+        if(diff < 0){ tag = 'OVERDUE'; cls = 'overdue'; }
+        else if(diff === 0){ tag = 'THIS MO'; cls = 'now'; }
+        else { tag = `+${diff}mo`; cls = diff <= 1 ? 'soon' : ''; }
+      }
+      const bd = bdSummary(a.bdSkus);
+      return `
+        <div class="upcoming-row ${isOverdue(a)?'overdue':''}" data-action="goto-group" data-group="${a.groupId}">
+          <span class="group-pill" style="background:${groupColor(a.groupId)}">${esc(groupName(a.groupId))}</span>
+          <span class="row-main"><span class="brand">${esc(a.brand||'Untitled')}</span> &middot; <span class="name">${esc(a.product||'—')}</span></span>
+          <span class="row-month">${monthLabel(a.month)}</span>
+          <span class="badge as-${slug(a.approvalStatus)}">${a.approvalStatus||'No approval'}</span>
+          <span class="badge es-${slug(a.executionStatus)}">${a.executionStatus||'Not started'}</span>
+          <span class="countdown ${cls}">${tag}${bd.has?'<span class="bd-flag">BD</span>':''}</span>
+        </div>`;
+    }).join('') : `<div class="empty-note">Nothing outstanding — everything is marked Done.</div>`;
+
+    const allRows = state.activations.slice().sort((a,b)=>(a.month||'').localeCompare(b.month||'')).map(a => {
+      const bd = bdSummary(a.bdSkus);
+      return `
+      <tr class="${isOverdue(a)?'overdue':''}" data-action="goto-group" data-group="${a.groupId}">
+        <td><span class="group-pill" style="background:${groupColor(a.groupId)}">${esc(groupName(a.groupId))}</span></td>
+        <td>${esc(a.brand||'—')}</td>
+        <td>${esc(a.product||'—')}</td>
+        <td>${monthLabel(a.month)}</td>
+        <td><span class="badge as-${slug(a.approvalStatus)}">${a.approvalStatus||'—'}</span></td>
+        <td><span class="badge es-${slug(a.executionStatus)}">${a.executionStatus||'—'}</span></td>
+        <td>${esc(bd.text)}</td>
+      </tr>`;
+    }).join('');
+
+    return `
+      <div class="stat-strip">${groupCards}</div>
+      <div class="stat-strip">${execCards}</div>
+      <div class="section-row">
+        <h2 class="section-title">Outstanding activations</h2>
+        <button class="btn secondary" data-action="export-csv">Export CSV</button>
+      </div>
+      <div class="upcoming-list">${upcomingRows}</div>
+      <div class="section-row"><h2 class="section-title">All activations</h2></div>
+      <div class="full-table-wrap">
+        <table class="full-table">
+          <thead><tr><th>Group</th><th>Brand</th><th>Product</th><th>Month</th><th>Approval</th><th>Execution</th><th>Bangladesh</th></tr></thead>
+          <tbody>${allRows || '<tr><td colspan="7" style="color:var(--ink-soft);padding:16px;">Nothing here yet.</td></tr>'}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function renderGroupTable(groupId){
+    const allRows = state.activations.filter(a => a.groupId === groupId);
+    const rows = allRows.filter(matchesFilter).sort((a,b)=>(a.month||'').localeCompare(b.month||''));
+
+    const tableRows = rows.map(a => {
+      const bd = bdSummary(a.bdSkus);
+      const expanded = state.expanded.has(a.id);
+      const overdue = isOverdue(a);
+      let out = `
+      <tr class="main-row ${overdue?'row-overdue':''}" data-id="${a.id}">
+        <td class="col-brand">${overdue?'<span class="overdue-dot" title="Overdue"></span>':''}<input type="text" data-id="${a.id}" data-field="brand" value="${esc(a.brand)}" placeholder="Brand" aria-label="Brand"></td>
+        <td class="col-product"><input type="text" data-id="${a.id}" data-field="product" value="${esc(a.product)}" placeholder="Product / activation" aria-label="Product"></td>
+        <td><select data-id="${a.id}" data-field="month" aria-label="Month">${monthOptionsHtml(a.month)}</select></td>
+        <td><input type="text" data-id="${a.id}" data-field="digital" value="${esc(a.digital)}" placeholder="—" aria-label="Digital"></td>
+        <td><input type="text" data-id="${a.id}" data-field="magazine" value="${esc(a.magazine)}" placeholder="—" aria-label="Magazine"></td>
+        <td><input type="text" data-id="${a.id}" data-field="outpost" value="${esc(a.outpost)}" placeholder="—" aria-label="Outpost"></td>
+        <td><input type="text" data-id="${a.id}" data-field="window" value="${esc(a.window)}" placeholder="—" aria-label="Window"></td>
+        <td><input type="text" data-id="${a.id}" data-field="kol" value="${esc(a.kol)}" placeholder="—" aria-label="KOL"></td>
+        <td><input type="text" data-id="${a.id}" data-field="event" value="${esc(a.event)}" placeholder="—" aria-label="Event / MHA / Podium"></td>
+        <td><input type="text" data-id="${a.id}" data-field="deck" value="${esc(a.deck)}" placeholder="—" aria-label="Deck"></td>
+        <td><input type="text" data-id="${a.id}" data-field="tmDeck" value="${esc(a.tmDeck)}" placeholder="—" aria-label="TM Deck"></td>
+        <td><select data-id="${a.id}" data-field="approvalStatus" class="status-select as-${slug(a.approvalStatus)}" aria-label="Approval status">${options(APPROVAL_OPTIONS, a.approvalStatus)}</select></td>
+        <td><select data-id="${a.id}" data-field="executionStatus" class="status-select es-${slug(a.executionStatus)}" aria-label="Execution status">${options(EXECUTION_OPTIONS, a.executionStatus)}</select></td>
+        <td><button class="bd-toggle ${bd.has?'has-bd':''}" data-action="toggle-bd" data-id="${a.id}">${expanded?'&#9660;':'&#9654;'} ${esc(bd.text)}</button></td>
+        <td><input type="text" data-id="${a.id}" data-field="notes" value="${esc(a.notes)}" placeholder="—" aria-label="Notes"></td>
+        <td><button class="del-btn" data-action="delete-activation" data-id="${a.id}" aria-label="Delete this activation">&times;</button></td>
+      </tr>`;
+      if(expanded){
+        const skuRows = (a.bdSkus||[]).map(s => `
+          <tr>
+            <td><input type="text" data-id="${a.id}" data-sku-id="${s.id}" data-field="subtype" value="${esc(s.subtype)}" placeholder="Subtype"></td>
+            <td><input type="text" data-id="${a.id}" data-sku-id="${s.id}" data-field="sku" value="${esc(s.sku)}" placeholder="SKU"></td>
+            <td><input type="text" data-id="${a.id}" data-sku-id="${s.id}" data-field="ean" value="${esc(s.ean)}" placeholder="EAN"></td>
+            <td><input type="text" data-id="${a.id}" data-sku-id="${s.id}" data-field="productName" value="${esc(s.productName)}" placeholder="Product name"></td>
+            <td><input type="text" data-id="${a.id}" data-sku-id="${s.id}" data-field="value" value="${esc(s.value)}" placeholder="Qty or status"></td>
+            <td><button class="del-btn" data-action="delete-sku" data-id="${a.id}" data-sku-id="${s.id}">&times;</button></td>
+          </tr>`).join('');
+        out += `
+        <tr class="bd-detail-row"><td colspan="16">
+          ${(a.bdSkus||[]).length ? `
+          <table class="bd-detail-table">
+            <thead><tr><th>Subtype</th><th>SKU</th><th>EAN</th><th>Product name</th><th>Qty in BD / Status</th><th></th></tr></thead>
+            <tbody>${skuRows}</tbody>
+          </table>` : `<div class="bd-empty">No Bangladesh SKU detail logged for this activation yet.</div>`}
+          <div class="bd-add-row"><button class="btn secondary" data-action="add-sku" data-id="${a.id}">+ Add SKU</button></div>
+        </td></tr>`;
+      }
+      return out;
+    }).join('');
+
+    if(!allRows.length){
+      return `<div class="empty-note">No activations for this group yet — click "Add activation" to log the first one.</div>`;
+    }
+    if(!rows.length){
+      return `<div class="empty-note">No activations match the current filters.</div>`;
+    }
+    return `
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Brand</th><th>Product</th><th>Month</th><th>Digital</th><th>Magazine</th><th>Outpost</th><th>Window</th><th>KOL</th>
+            <th>Event / MHA / Podium</th><th>Deck</th><th>TM Deck</th><th>Approval</th><th>Execution</th><th>Bangladesh</th><th>Notes</th><th></th>
+          </tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  function renderGroupView(groupId){
+    const g = state.groups.find(g => g.id === groupId);
+    const allRows = state.activations.filter(a => a.groupId === groupId);
+    const filteredCount = allRows.filter(matchesFilter).length;
+    const overdueCount = allRows.filter(isOverdue).length;
+    const f = state.filter;
+
+    return `
+      <div class="group-header">
+        <div class="group-title-row">
+          <h2 class="group-title">${esc(g.name)}</h2>
+          <button class="icon-btn" data-action="start-rename" data-id="${g.id}" aria-label="Rename group">&#9998;</button>
+          <span class="group-count">${allRows.length} activation${allRows.length===1?'':'s'}${overdueCount ? ` · <span class="warn">${overdueCount} overdue</span>` : ''}</span>
+        </div>
+        <button class="btn" data-action="add-activation" data-group="${g.id}">+ Add activation</button>
+      </div>
+      <div class="toolbar">
+        <input type="text" data-filter="search" placeholder="Search brand, product, notes…" value="${esc(f.search)}">
+        <select data-filter="approval">
+          <option value="__ALL__" ${f.approval==='__ALL__'?'selected':''}>All approval</option>
+          ${APPROVAL_OPTIONS.map(o=>`<option value="${esc(o)}" ${f.approval===o?'selected':''}>${o===''?'Not started':esc(o)}</option>`).join('')}
+        </select>
+        <select data-filter="execution">
+          <option value="__ALL__" ${f.execution==='__ALL__'?'selected':''}>All execution</option>
+          ${EXECUTION_OPTIONS.map(o=>`<option value="${esc(o)}" ${f.execution===o?'selected':''}>${o===''?'Not started':esc(o)}</option>`).join('')}
+        </select>
+        <label><input type="checkbox" data-filter="overdueOnly" ${f.overdueOnly?'checked':''}> Overdue only</label>
+        ${(f.search || f.approval!=='__ALL__' || f.execution!=='__ALL__' || f.overdueOnly) ? `<button class="reset-link" data-action="reset-filters">Reset</button>` : ''}
+        <span class="result-count">Showing ${filteredCount} of ${allRows.length}</span>
+      </div>
+      <div id="group-table-region">${renderGroupTable(groupId)}</div>
+    `;
+  }
+
+  function updateActivation(id, field, val){
+    const a = state.activations.find(a => a.id === id);
+    if(!a) return;
+    a[field] = val;
+    a.updatedAt = new Date().toISOString();
+    saveActivations();
+    render();
+  }
+  function updateSku(id, skuId, field, val){
+    const a = state.activations.find(a => a.id === id);
+    if(!a) return;
+    const s = (a.bdSkus||[]).find(s => s.id === skuId);
+    if(!s) return;
+    s[field] = val;
+    a.updatedAt = new Date().toISOString();
+    saveActivations();
+    render();
+  }
+  function addActivation(groupId){
+    const a = { id: uid('x'), groupId, brand:'', product:'', month:'', digital:'', magazine:'', outpost:'', window:'', kol:'', event:'', deck:'', tmDeck:'', approvalStatus:'', executionStatus:'', bdSkus:[], notes:'', updatedAt:new Date().toISOString() };
+    state.activations.push(a);
+    state.justAddedId = a.id;
+    saveActivations();
+    render();
+  }
+  function deleteActivation(id){
+    const a = state.activations.find(a => a.id === id);
+    if(!a) return;
+    if(!confirm(`Delete "${a.product || a.brand || 'this activation'}"? This can't be undone.`)) return;
+    state.activations = state.activations.filter(x => x.id !== id);
+    saveActivations();
+    render();
+  }
+  function addSku(id){
+    const a = state.activations.find(a => a.id === id);
+    if(!a) return;
+    if(!a.bdSkus) a.bdSkus = [];
+    a.bdSkus.push({id: uid('s'), subtype:'', sku:'', ean:'', productName:'', value:''});
+    saveActivations();
+    render();
+  }
+  function deleteSku(id, skuId){
+    const a = state.activations.find(a => a.id === id);
+    if(!a) return;
+    a.bdSkus = (a.bdSkus||[]).filter(s => s.id !== skuId);
+    saveActivations();
+    render();
+  }
+  function renameGroup(id, newName){
+    state.renamingGroupId = null;
+    if(newName){ const g = state.groups.find(g => g.id === id); if(g) g.name = newName; saveGroups(); }
+    render();
+  }
+
+  function exportCsv(){
+    const headers = ['Group','Brand','Product','Month','Digital','Magazine','Outpost','Window','KOL','Event/MHA/Podium','Deck','TM Deck','Approval Status','Execution Status','Bangladesh Detail','Notes'];
+    const rows = state.activations.map(a => [
+      groupName(a.groupId), a.brand, a.product, monthLabel(a.month), a.digital, a.magazine, a.outpost, a.window, a.kol, a.event,
+      a.deck, a.tmDeck, a.approvalStatus, a.executionStatus,
+      (a.bdSkus||[]).map(s => `${s.subtype} ${s.sku} ${s.productName}: ${s.value}`).join(' | '),
+      a.notes
+    ]);
+    const csvEscape = v => `"${String(v ?? '').replace(/"/g,'""')}"`;
+    const csv = [headers, ...rows].map(r => r.map(csvEscape).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url; link.download = 'activation-board.csv';
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  const app = document.getElementById('app');
+
+  app.addEventListener('input', e => {
+    const el = e.target;
+    if(el.matches('[data-filter="search"]')){
+      state.filter.search = el.value;
+      refreshGroupTable();
+      const allRows = state.activations.filter(a => a.groupId === state.activeTab);
+      const filteredCount = allRows.filter(matchesFilter).length;
+      const countEl = document.querySelector('.result-count');
+      if(countEl) countEl.textContent = `Showing ${filteredCount} of ${allRows.length}`;
+    }
+  });
+
+  app.addEventListener('change', e => {
+    const el = e.target;
+    if(el.matches('[data-filter]') && el.dataset.filter !== 'search'){
+      const key = el.dataset.filter;
+      state.filter[key] = el.type === 'checkbox' ? el.checked : el.value;
+      render();
+      return;
+    }
+    if(el.matches('[data-sku-id]')){
+      updateSku(el.dataset.id, el.dataset.skuId, el.dataset.field, el.value);
+    } else if(el.matches('[data-field]')){
+      updateActivation(el.dataset.id, el.dataset.field, el.value);
+    } else if(el.matches('[data-action="rename-group-input"]')){
+      renameGroup(el.dataset.id, el.value.trim());
+    }
+  });
+
+  app.addEventListener('click', e => {
+    const tabBtn = e.target.closest('[data-tab]');
+    if(tabBtn){ state.activeTab = tabBtn.dataset.tab; state.filter = { search:'', approval:'__ALL__', execution:'__ALL__', overdueOnly:false }; render(); return; }
+    const renameBtn = e.target.closest('[data-action="start-rename"]');
+    if(renameBtn){ state.renamingGroupId = renameBtn.dataset.id; render(); return; }
+    const addBtn = e.target.closest('[data-action="add-activation"]');
+    if(addBtn){ addActivation(addBtn.dataset.group); return; }
+    const delBtn = e.target.closest('[data-action="delete-activation"]');
+    if(delBtn){ deleteActivation(delBtn.dataset.id); return; }
+    const toggleBd = e.target.closest('[data-action="toggle-bd"]');
+    if(toggleBd){ const id = toggleBd.dataset.id; state.expanded.has(id) ? state.expanded.delete(id) : state.expanded.add(id); refreshGroupTable(); return; }
+    const addSkuBtn = e.target.closest('[data-action="add-sku"]');
+    if(addSkuBtn){ addSku(addSkuBtn.dataset.id); return; }
+    const delSkuBtn = e.target.closest('[data-action="delete-sku"]');
+    if(delSkuBtn){ deleteSku(delSkuBtn.dataset.id, delSkuBtn.dataset.skuId); return; }
+    const exportBtn = e.target.closest('[data-action="export-csv"]');
+    if(exportBtn){ exportCsv(); return; }
+    const resetBtn = e.target.closest('[data-action="reset-filters"]');
+    if(resetBtn){ state.filter = { search:'', approval:'__ALL__', execution:'__ALL__', overdueOnly:false }; render(); return; }
+    const gotoRow = e.target.closest('[data-action="goto-group"]');
+    if(gotoRow && !e.target.matches('input,select')){ state.activeTab = gotoRow.dataset.group; state.filter = { search:'', approval:'__ALL__', execution:'__ALL__', overdueOnly:false }; render(); return; }
+  });
+
+  app.addEventListener('keydown', e => {
+    if(e.key === 'Enter' && e.target.matches('input,select')){ e.target.blur(); }
+    if(e.key === 'Escape' && e.target.dataset.action === 'rename-group-input'){ state.renamingGroupId = null; render(); }
+  });
+
+  init();
+})();
+</script>
+</body>
+</html>
