@@ -1,4 +1,4 @@
-import { getStore } from "@netlify/blobs";
+import { getStore } from "https://esm.sh/@netlify/blobs@10.7.13";
 
 const STORE_NAME = "auth-users";
 
