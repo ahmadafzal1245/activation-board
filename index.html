@@ -8,27 +8,24 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0A0D13; --bg-grid:rgba(255,255,255,0.025);
-    --surface:#12161F; --surface-2:#171C27; --surface-hover:#1A2029;
-    --line:#232A38; --line-soft:#1B212C;
-    --ink:#E8EAF0; --ink-soft:#8D96AC; --ink-faint:#5B6478;
-    --blue:#4FA8FF; --blue-bg:rgba(79,168,255,0.14);
-    --cyan:#35D6C4; --cyan-bg:rgba(53,214,196,0.14);
-    --amber:#FFB454; --amber-bg:rgba(255,180,84,0.16);
-    --green:#3DDC84; --green-bg:rgba(61,220,132,0.15);
-    --red:#FF5C6C; --red-bg:rgba(255,92,108,0.15);
-    --purple:#A78BFA;
-    --grey:#7C859B; --grey-bg:rgba(124,133,155,0.16);
+    --bg:#F6F7FA;
+    --surface:#FFFFFF; --surface-2:#F2F4F7; --surface-hover:#EDF0F5;
+    --line:#E3E7ED; --line-soft:#ECEFF3;
+    --ink:#1C2333; --ink-soft:#5C6478; --ink-faint:#98A0B0;
+    --blue:#2568D6; --blue-bg:rgba(37,104,214,0.09);
+    --cyan:#0B8F82; --cyan-bg:rgba(11,143,130,0.10);
+    --amber:#B06B08; --amber-bg:rgba(176,107,8,0.12);
+    --green:#158F57; --green-bg:rgba(21,143,87,0.10);
+    --red:#D33B4C; --red-bg:rgba(211,59,76,0.09);
+    --purple:#7256D6;
+    --grey:#5F6879; --grey-bg:rgba(95,104,121,0.09);
     --radius:10px;
-    --shadow:0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+    --shadow:0 1px 2px rgba(16,24,40,0.04), 0 8px 20px rgba(16,24,40,0.06);
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
-    background:
-      linear-gradient(var(--bg-grid) 1px, transparent 1px) 0 0/100% 32px,
-      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px) 0 0/32px 100%,
-      var(--bg);
+    background:var(--bg);
     color:var(--ink);font-family:'IBM Plex Sans',sans-serif;font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;
   }
   #app{max-width:1560px;margin:0 auto;padding:26px 26px 80px;}
@@ -120,9 +117,9 @@
   td select:hover{border-color:var(--line);}
   td select.status-select{appearance:none;border:1px solid transparent;border-radius:6px;padding:6px 9px;font-weight:600;font-size:11px;min-width:118px;}
   td select.status-select:hover{border-color:var(--line);}
-  .col-brand{position:sticky;left:0;background:var(--surface);z-index:2;box-shadow:2px 0 6px rgba(0,0,0,0.35);}
+  .col-brand{position:sticky;left:0;background:var(--surface);z-index:2;box-shadow:2px 0 6px rgba(16,24,40,0.06);}
   tbody tr.main-row:hover .col-brand{background:var(--surface-hover);}
-  tbody tr.row-overdue .col-brand{background:#171319;}
+  tbody tr.row-overdue .col-brand{background:#FDEEEF;}
   .col-brand input{font-weight:600;min-width:120px;}
   .overdue-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--red);box-shadow:0 0 5px var(--red);margin-right:5px;}
   .col-product input{min-width:150px;}
